@@ -513,9 +513,9 @@ Select the name of the output grayscale image."""
         output_image = workspace.display_data.output_image
         figure.set_subplots((1, 2))
         figure.subplot_imshow_color(0, 0, input_image,
-                                    title="Original image: %s" % self.image_name)
+                                    title="Original image: {}".format(self.image_name))
         figure.subplot_imshow(0, 1, output_image,
-                              title="Grayscale image: %s" % self.grayscale_name,
+                              title="Grayscale image: {}".format(self.grayscale_name),
                               colormap=matplotlib.cm.Greys_r,
                               sharexy=figure.subplot(0, 0))
 
@@ -552,7 +552,7 @@ Select the name of the output grayscale image."""
         for eachplot in range(ndisp):
             placenum = eachplot + 1
             figure.subplot_imshow(placenum % ncols, placenum / ncols, disp_collection[eachplot][0],
-                                  title="%s" % (disp_collection[eachplot][1]),
+                                  title="{}".format(disp_collection[eachplot][1]),
                                   colormap=matplotlib.cm.Greys_r,
                                   sharexy=figure.subplot(0, 0))
 
@@ -609,7 +609,9 @@ Select the name of the output grayscale image."""
             # Added HSV settings
             #
             setting_values = (setting_values[:13] +
-                              [cellprofiler.setting.YES, "OrigHue", cellprofiler.setting.YES, "OrigSaturation", cellprofiler.setting.YES, "OrigValue"] +
+                              [cellprofiler.setting.YES, "OrigHue",
+                               cellprofiler.setting.YES, "OrigSaturation",
+                               cellprofiler.setting.YES, "OrigValue"] +
                               setting_values[13:])
             variable_revision_number = 3
 
