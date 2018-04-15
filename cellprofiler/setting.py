@@ -189,9 +189,9 @@ class Setting(object):
         NOTE: strings are deprecated, use unicode_value instead.
         '''
         if isinstance(self.__value, unicode):
-            return str(self.__value.encode('utf-16'))
+            return str(self.__value)
         if not isinstance(self.__value, str):
-            raise ValidationError("%s was not a string" % self.__value, self)
+            raise ValidationError("{} was not a string".format(self.__value), self)
         return self.__value
 
     @property
