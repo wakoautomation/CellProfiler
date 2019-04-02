@@ -133,6 +133,9 @@ def haralick_2d(image, distances, levels, ignore_zeros=True):
         3 * numpy.pi / 4
     ]
 
+    if image.max() >= levels:
+        image = skimage.exposure.rescale_intensity(image, in_range=(0,255), out_range=(0, levels-1))
+
     greycomatrix = skimage.feature.greycomatrix(image, distances, angles, levels, symmetric=True)
     if ignore_zeros:
         greycomatrix = greycomatrix[1:, 1:, :, :]

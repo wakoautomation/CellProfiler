@@ -2,6 +2,7 @@ import StringIO
 import pytest
 
 import numpy
+import numpy.testing
 
 import cellprofiler.image
 import cellprofiler.measurement
@@ -245,7 +246,7 @@ def test_many_objects(pipeline, grayscale_level):
     workspace, module = make_workspace(image, labels)
     assert isinstance(module, cellprofiler.modules.measuretexture.MeasureTexture)
     module.scale_groups[0].scale.value = 2
-    module.levels_setting.value = grayscale_level
+    set_grayscale_level(module, grayscale_level)
     module.run(workspace)
     m = workspace.measurements
     all_measurements = module.get_measurements(
@@ -276,10 +277,7 @@ def test_many_objects(pipeline, grayscale_level):
             )
             assert mname in all_column_features
             values = m.get_current_measurement(INPUT_OBJECTS_NAME, mname)
-            if module.levels_setting.value == "256":
-                assert numpy.all(values != 0)
-            else:
-                assert numpy.all(values == 0)
+            assert numpy.all(values != 0)
             assert "{:d}_{:02d}".format(2, angle) in all_scales
 
 
