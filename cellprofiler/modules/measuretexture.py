@@ -136,8 +136,6 @@ def haralick_2d(image, distances, levels, ignore_zeros=True):
     if image.max() >= levels:
         image = skimage.exposure.rescale_intensity(image, in_range=(0,255), out_range=(0, levels-1))
 
-    image = numpy.uint(numpy.around(image * 255))
-
     greycomatrix = skimage.feature.greycomatrix(image, distances, angles, levels, symmetric=True)
     if ignore_zeros:
         greycomatrix = greycomatrix[1:, 1:, :, :]
@@ -145,6 +143,7 @@ def haralick_2d(image, distances, levels, ignore_zeros=True):
     greycomatrices = numpy.split(greycomatrix, len(angles), -1)
     greycomatrices = [greycomatrix.reshape((levels, levels)) for greycomatrix in greycomatrices]
 
+    print("HARALICK_2D() AT THE RETURN STATEMENT")
     return mahotas.features.texture.haralick_features(greycomatrices)
 
 
@@ -673,7 +672,15 @@ measured and will result in a undefined value in the output file.
         # mahotas.features.haralick bricks itself when provided a dtype larger than uint8 (version 1.4.3)
         pixel_data = skimage.util.img_as_ubyte(image.pixel_data)
 
-        features = mahotas.features.haralick(pixel_data, distance=scale)
+        # features = mahotas.features.haralick(pixel_data, distance=scale)
+        try:
+            features = haralick_2d(
+                pixel_data,
+                distances=[scale],
+                levels=int(self.levels_setting.value)
+            )
+        except ValueError:
+            features = numpy.nan
 
         for direction, direction_features in enumerate(features):
             object_name = "{:d}_{:02d}".format(scale, direction)
