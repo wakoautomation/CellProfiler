@@ -125,25 +125,58 @@ IO_OBJECTS = "Objects"
 IO_BOTH = "Both"
 
 
-def haralick_2d(image, distances, levels, ignore_zeros=True):
-    angles = [
-        0,
-        1 * numpy.pi / 4,
-        1 * numpy.pi / 2,
-        3 * numpy.pi / 4
-    ]
+def haralick_2d(image, distances, levels, ignore_zeros=False):
+    # When skimage checks the diagonals, it's 1 index off compared to mahota's. Possible reason is that mahotas examines
+    # the relative "distance" pixels away whereas skimage checks in terms of the physical distance.
+    angles_dists = []
+    for distance in distances:
+        angles_dists_to_add = [
+            (0, distance),
+            (1 * numpy.pi / 4, distance + 1),
+            (2 * numpy.pi / 4, distance),
+            (3 * numpy.pi / 4, distance + 1)
+        ]
+        angles_dists += angles_dists_to_add
 
+    # TODO: levels is being hardcoded, figure out why GUI setting doesn't propogate
+    # TODO Remove once debugging done
+    levels = 256
+
+    # TODO Remove once debugging done
+    print(image.tolist())
+    print(image.min(), image.max(), image.shape)
+
+    # Rescale image if image pixel intensity range is higher than greyscale levels
     if image.max() >= levels:
-        image = skimage.exposure.rescale_intensity(image, in_range=(0,255), out_range=(0, levels-1))
+        image = skimage.exposure.rescale_intensity(image, in_range=(0, image.max()), out_range=(0, levels - 1))
+    # # TODO Remove once debugging done
+    # # Uncomment this block for matching mahotas coos but many very different texture measurements
+    # # Comment out if want same results as CP3 (only Texture_DifferenceVariance_DNA differ) but differing coos
+    # else:
+    #     image = skimage.exposure.rescale_intensity(image, out_range=(0, 255))
 
-    greycomatrix = skimage.feature.greycomatrix(image, distances, angles, levels, symmetric=True)
-    if ignore_zeros:
-        greycomatrix = greycomatrix[1:, 1:, :, :]
-        levels -= 1
-    greycomatrices = numpy.split(greycomatrix, len(angles), -1)
-    greycomatrices = [greycomatrix.reshape((levels, levels)) for greycomatrix in greycomatrices]
+    # TODO Remove once debugging done
+    print(image.tolist())
+    print(image.min(), image.max(), image.shape)
 
-    print("HARALICK_2D() AT THE RETURN STATEMENT")
+    # Create coos for cooresponding angles and distances
+    greycomatrices = []
+    for i in range(len(angles_dists)):
+        coo = skimage.feature.greycomatrix(image, [angles_dists[i][1]], [angles_dists[i][0]],
+                                           levels, symmetric=True)[:, :, 0, 0]
+
+        # TODO Remove once debugging done
+        # Comparing mahotas coo equality with distance hardcoded to 4
+        print("CHECKING %d : %r" % (i, numpy.array_equal(coo, mahotas.features.texture.cooccurence(image, i, distance=4))))
+
+        # Could use mahotas.features.texture.haralick_features(ignore_zeros=) but need to catch empty image exception
+        # and possibly modify behavior. check with test_measuretexture.py::test_zeros
+        if ignore_zeros:
+            coo[0,:] = 0
+            coo[:,0] = 0
+
+        greycomatrices.append(coo)
+
     return mahotas.features.texture.haralick_features(greycomatrices)
 
 
@@ -646,7 +679,8 @@ measured and will result in a undefined value in the output file.
                 features[:, :, index] = haralick_2d(
                     label_data,
                     distances=[scale],
-                    levels=int(self.levels_setting.value)
+                    levels=int(self.levels_setting.value),
+                    ignore_zeros=True
                 )
             except ValueError:
                 features[:, :, index] = numpy.nan
@@ -679,8 +713,10 @@ measured and will result in a undefined value in the output file.
                 distances=[scale],
                 levels=int(self.levels_setting.value)
             )
-        except ValueError:
+        # TODO Remove e and print statement once debugging done
+        except ValueError, e:
             features = numpy.nan
+            print ("ERROR ----- ", e)
 
         for direction, direction_features in enumerate(features):
             object_name = "{:d}_{:02d}".format(scale, direction)
